@@ -55,13 +55,13 @@ else
 end
 nslash     = numel(slashind);
 patpath    = headerfile(1:slashind(nslash-6));
-patname    = headerfile(slashind(nslash-7)+1:slashind(nslash-6)-1);
-experiment = headerfile(slashind(nslash-5)+1:slashind(nslash-4)-1);
-sessionnum = headerfile(slashind(nslash-3)+1:slashind(nslash-2)-1);
-ephysbase  = [headerfile(1:slashind(nslash-2)) 'ephys' headerfile(slashind(nslash-1):slashind(nslash))];
+%patname    = headerfile(slashind(nslash-7)+1:slashind(nslash-6)-1);
+%experiment = headerfile(slashind(nslash-5)+1:slashind(nslash-4)-1);
+%sessionnum = headerfile(slashind(nslash-3)+1:slashind(nslash-2)-1);
+ephyspath  = [headerfile(1:slashind(nslash-2)) 'ephys' headerfile(slashind(nslash-1):slashind(nslash))];
 
 % find and parse sources.json 
-sourcesfn = [ephysbase 'sources.json'];
+sourcesfn = [ephyspath 'sources.json'];
 hdr1      = loadjson(fixjsonnan(sourcesfn));
 fieldname = fieldnames(hdr1);
 if numel(fieldname)>1
@@ -69,6 +69,14 @@ if numel(fieldname)>1
 end
 hdr1      = hdr1.(fieldname{:}); 
 
+% find and parse all_events.json, containing the eeg file name (unambigously, hopefully)
+takeventsfn = [headerfile(1:slashind(end)) hookhdr.files.task_events];
+taskevents  = loadjson(takeventsfn);
+filebase    = taskevents{1}.eegfile; 
+if isempty(filebase) % sigh
+  error('Ephys files cannot be identified unambigously')
+  % possible unsafe fallback: filebase = [patname '_' experiment '_' sessionnum '_' hdr1.start_time_str];
+end
 
 % obtain contacts.json info
 contactsfn = hookhdr.info.contacts;
@@ -78,49 +86,59 @@ hdr2       = loadjson(contactsfn);
 fieldname  = fieldnames(hdr2);
 hdr2       = hdr2.(fieldname{:}); % failsafe in case of event that two main fields are present
 
-
-%%% Parse obtained information and create standardized hdr structure
-
 % obtain list of possible channels and their data-file file extensions, combine into filenames 
 label     = fieldnames(hdr2.contacts);
 chanfn    = cell(size(label));
-datadir   = [ephysbase 'noreref/'];
+datadir   = [ephyspath 'noreref/'];
 for ichan = 1:numel(label)
   currind = hdr2.contacts.(label{ichan}).channel;
-  currfn  = [patname '_' experiment '_' sessionnum '_' hdr1.start_time_str '.' num2str(currind,'%03.0f')];
+  currfn  = [filebase '.' num2str(currind,'%03.0f')];
   if exist([datadir currfn],'file')
     chanfn{ichan} = currfn;
   end
 end
 notexist = cellfun(@isempty,chanfn);
-if sum(notexist)~=0
-  warning([num2str(sum(notexist)) ' out of ' num2str(numel(label)) ' channels in contacts.json not found on disk, removed from header'])
+if all(notexist)
+  error('insufficient information to identify ephys files that match task events')
+elseif sum(notexist)~=0
+  warning([num2str(sum(notexist)) ' out of ' num2str(numel(label)) ' electrodes in contacts.json not found on disk, removed from header'])
   label(notexist)  = [];
   chanfn(notexist) = [];
 end
 
-% correct n_samples being nan...lame. Do so by opening each electrode file, determine number of bits, ensure all are equal
-nsample = hdr1.n_samples;
-if isnan(nsample)
-  nbits = zeros(1,numel(chanfn));
-  for ichan = 1:numel(chanfn)
-    fn = [datadir chanfn{ichan}];
-    fid = fopen(fn);
-    fseek(fid,0,'eof');
-    nbits(ichan) = ftell(fid);
-    fclose(fid);
-  end
-  if all(nbits==nbits(1))
-    nsample = nbits(1);
-  else
-    error('electrode files are of different size')
-  end
-end
-
-% get number of bytes per element of dataformat (lame..., there should be matlab function for this)
+% get number of bytes per sample of dataformat (lame..., there should be matlab function for this)
 tmp = cast(1,hdr1.data_format);
 tmp = whos('tmp');
 nbytes = tmp.bytes;
+
+% sources.json has issues, check here if nsamples matches the data. An accidental match is extremely unlikely (also correct nsamples if it's NaN)
+nsample = hdr1.n_samples;
+nbits = zeros(1,numel(chanfn));
+for ichan = 1:numel(chanfn)
+  fn = [datadir chanfn{ichan}];
+  fid = fopen(fn);
+  fseek(fid,0,'eof');
+  nbits(ichan) = ftell(fid);
+  fclose(fid);
+end
+if all(nbits==nbits(1))
+  foundnsample = nbits(1) ./ (nbytes*8);
+  if isnan(nsample)
+    nsample = foundnsample;
+  else
+    if isequal(nsample,foundnsample)
+      % nice
+    else
+      if isequal(nbits(1)/nbytes,nsample)
+        warning('nsamples in sources.json matches nbits/(nbytes per sample) not nbits/(nbytes per sample)*8) as it should')
+      else
+        error('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events')
+      end
+    end
+  end
+else
+  error('electrode ephys files are of different size')
+end
 
 % construct header
 hdr = [];
