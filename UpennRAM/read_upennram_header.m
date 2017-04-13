@@ -33,6 +33,8 @@ function [hdr] = read_upennram_header(headerfile)
 %                                      (2) $PATIENTID/localizations/$#/montages/$#/neuroradiology/current_processed/contacts.json (channel names)
 %                            (It is key that #2 reflects the montage used on the day of recording, incase the patients had a reimplantation, 
 %                             which is ensured by using index.json.)
+%                            Note: the Ephys filename base is currently taken from $PATIENTID/experiments/$TASKID/sessions/$#/behavioral/current_processed/task_events.json,
+%                                  due to the name field in index.json contains faulty information for some datasets
 %      And,
 %                hdr = matlab structure, containing details of the respective dataset, such as channel names, binary format, number of samples, etc
 %
