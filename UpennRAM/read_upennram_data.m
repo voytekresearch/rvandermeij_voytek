@@ -53,7 +53,7 @@ dat = zeros(nchan,nsample);
 
 % loop over channels, read in data
 for ichan = 1:nchan
-  fn = [datadir hdr.orig1.name '.' hdr.labelfileext{chanindx(ichan)}]; % this ensures there is no mismatch between data and header (as it will unavoidably lead to an error)
+  fn = [datadir hdr.channelfile{chanindx(ichan)}]; % this ensures there is no mismatch between data and header (as it will unavoidably lead to an error)
   
   % open file read-only
   fid = fopen(fn,'r');
