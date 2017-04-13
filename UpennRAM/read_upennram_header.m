@@ -131,6 +131,7 @@ if all(nbits==nbits(1))
     else
       if isequal(nbits(1)/nbytes,nsample)
         warning('nsamples in sources.json matches nbits/(nbytes per sample) not nbits/(nbytes per sample)*8) as it should')
+        nsample = foundnsample;
       else
         error('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events')
       end
