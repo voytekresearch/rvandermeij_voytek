@@ -65,6 +65,7 @@ sourcesfn = [ephyspath 'sources.json'];
 hdr1      = loadjson(fixjsonnan(sourcesfn));
 fieldname = fieldnames(hdr1);
 if numel(fieldname)>1
+  warning('multiple datasets detects in 1 session? Error following')
   error('multiple datasets detects in 1 session?')
 end
 hdr1      = hdr1.(fieldname{:}); 
@@ -74,6 +75,7 @@ takeventsfn = [headerfile(1:slashind(end)) hookhdr.files.task_events];
 taskevents  = loadjson(takeventsfn);
 filebase    = taskevents{1}.eegfile; 
 if isempty(filebase) % sigh
+  warning('Ephys files cannot be identified unambigously, error following')
   error('Ephys files cannot be identified unambigously')
   % possible unsafe fallback: filebase = [patname '_' experiment '_' sessionnum '_' hdr1.start_time_str];
 end
@@ -99,6 +101,7 @@ for ichan = 1:numel(label)
 end
 notexist = cellfun(@isempty,chanfn);
 if all(notexist)
+  warning('insufficient information to identify ephys files that match task events, error following')
   error('insufficient information to identify ephys files that match task events')
 elseif sum(notexist)~=0
   warning([num2str(sum(notexist)) ' out of ' num2str(numel(label)) ' electrodes in contacts.json not found on disk, removed from header'])
@@ -129,10 +132,12 @@ if all(nbytes==nbytes(1))
     if isequal(nsample,foundnsample)
       % nice
     else
+      warning('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events, error following')
       error('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events')
     end
   end
 else
+  warning('electrode ephys files are of different size, error following')
   error('electrode ephys files are of different size')
 end
 
