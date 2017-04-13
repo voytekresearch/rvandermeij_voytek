@@ -64,7 +64,10 @@ ephysbase  = [headerfile(1:slashind(nslash-2)) 'ephys' headerfile(slashind(nslas
 sourcesfn = [ephysbase 'sources.json'];
 hdr1      = loadjson(fixjsonnan(sourcesfn));
 fieldname = fieldnames(hdr1);
-hdr1      = hdr1.(fieldname{:}); % failsafe in case of event that two main fields are present
+if numel(fieldname)>1
+  error('multiple datasets detects in 1 session?')
+end
+hdr1      = hdr1.(fieldname{:}); 
 
 
 % obtain contacts.json info
@@ -84,8 +87,8 @@ chanfn    = cell(size(label));
 datadir   = [ephysbase 'noreref/'];
 for ichan = 1:numel(label)
   currind = hdr2.contacts.(label{ichan}).channel;
-  currfn  = [datadir patname '_' experiment '_' sessionnum '_' hdr1.start_time_str '.' num2str(currind,'%03.0f')];
-  if exist(currfn,'file')
+  currfn  = [patname '_' experiment '_' sessionnum '_' hdr1.start_time_str '.' num2str(currind,'%03.0f')];
+  if exist([datadir currfn],'file')
     chanfn{ichan} = currfn;
   end
 end
@@ -96,6 +99,24 @@ if sum(notexist)~=0
   chanfn(notexist) = [];
 end
 
+% correct n_samples being nan...lame. Do so by opening each electrode file, determine number of bits, ensure all are equal
+nsample = hdr1.n_samples;
+if isnan(nsample)
+  nbits = zeros(1,numel(chanfn));
+  for ichan = 1:numel(chanfn)
+    fn = [datadir chanfn{ichan}];
+    fid = fopen(fn);
+    fseek(fid,0,'eof');
+    nbits(ichan) = ftell(fid);
+    fclose(fid);
+  end
+  if all(nbits==nbits(1))
+    nsample = nbits(1);
+  else
+    error('electrode files are of different size')
+  end
+end
+
 % get number of bytes per element of dataformat (lame..., there should be matlab function for this)
 tmp = cast(1,hdr1.data_format);
 tmp = whos('tmp');
@@ -104,7 +125,7 @@ nbytes = tmp.bytes;
 % construct header
 hdr = [];
 hdr.nChans       = numel(label);
-hdr.nSamples     = hdr1.n_samples;
+hdr.nSamples     = nsample;
 hdr.Fs           = hdr1.sample_rate;
 hdr.label        = label;
 hdr.channelfile  = chanfn;
