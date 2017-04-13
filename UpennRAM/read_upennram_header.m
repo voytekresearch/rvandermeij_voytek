@@ -109,32 +109,27 @@ end
 % get number of bytes per sample of dataformat (lame..., there should be matlab function for this)
 tmp = cast(1,hdr1.data_format);
 tmp = whos('tmp');
-nbytes = tmp.bytes;
+nbytespersample = tmp.bytes;
 
 % sources.json has issues, check here if nsamples matches the data. An accidental match is extremely unlikely (also correct nsamples if it's NaN)
 nsample = hdr1.n_samples;
-nbits = zeros(1,numel(chanfn));
+nbytes  = zeros(1,numel(chanfn));
 for ichan = 1:numel(chanfn)
   fn = [datadir chanfn{ichan}];
   fid = fopen(fn);
   fseek(fid,0,'eof');
-  nbits(ichan) = ftell(fid);
+  nbytes(ichan) = ftell(fid);
   fclose(fid);
 end
-if all(nbits==nbits(1))
-  foundnsample = nbits(1) ./ (nbytes*8);
+if all(nbytes==nbytes(1))
+  foundnsample = nbytes(1) ./ nbytespersample;
   if isnan(nsample)
     nsample = foundnsample;
   else
     if isequal(nsample,foundnsample)
       % nice
     else
-      if isequal(nbits(1)/nbytes,nsample)
-        warning('nsamples in sources.json matches nbits/(nbytes per sample) not nbits/(nbytes per sample)*8) as it should')
-        nsample = foundnsample;
-      else
-        error('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events')
-      end
+      error('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events')
     end
   end
 else
@@ -151,7 +146,7 @@ hdr.channelfile  = chanfn;
 hdr.nSamplesPre  = 0;
 hdr.nTrials      = 1;
 hdr.dataformat   = hdr1.data_format;
-hdr.nBytes       = nbytes;
+hdr.nBytes       = nbytespersample;
 hdr.chantype     = repmat({'unknown'},[numel(label) 1]);
 hdr.chanunit     = repmat({'unknown'},[numel(label) 1]);
 hdr.orig1        = hdr1;
