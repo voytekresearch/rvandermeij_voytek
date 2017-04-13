@@ -44,20 +44,28 @@ function [hdr] = read_upennram_header(headerfile)
 
 % Copyright (C) 2016-2017, Roemer van der Meij
 
-% obtain sources.json info
-ind       = strfind(headerfile,'behavioral');
-sourcesfn = [headerfile(1:ind-1) 'ephys' headerfile(ind+10:end-10) 'sources.json'];
-hdr1      = loadjson(sourcesfn);
+% parse contents of 'hook' headerfile
+hookhdr = loadjson(headerfile);
+
+% obtain patient path, patient name, experiment, sessionnumber,ephysbase
+if isunix
+  slashind = strfind(headerfile,'/');
+else
+  slashind = strfind(headerfile,'\');
+end
+nslash     = numel(slashind);
+patpath    = headerfile(1:slashind(nslash-6));
+patname    = headerfile(slashind(nslash-7)+1:slashind(nslash-6)-1);
+experiment = headerfile(slashind(nslash-5)+1:slashind(nslash-4)-1);
+sessionnum = headerfile(slashind(nslash-3)+1:slashind(nslash-2)-1);
+ephysbase  = [headerfile(1:slashind(nslash-2)) 'ephys' headerfile(slashind(nslash-1):slashind(nslash))];
+
+% find and parse sources.json 
+sourcesfn = [ephysbase 'sources.json'];
+hdr1      = loadjson(fixjsonnan(sourcesfn));
 fieldname = fieldnames(hdr1);
 hdr1      = hdr1.(fieldname{:}); % failsafe in case of event that two main fields are present
 
-
-% obtain patient path
-ind     = strfind(headerfile,'experiments');
-patpath = headerfile(1:ind-1);
-
-% parse contents of 'hook' headerfile
-hookhdr = loadjson(headerfile);
 
 % obtain contacts.json info
 contactsfn = hookhdr.info.contacts;
@@ -67,14 +75,25 @@ hdr2       = loadjson(contactsfn);
 fieldname  = fieldnames(hdr2);
 hdr2       = hdr2.(fieldname{:}); % failsafe in case of event that two main fields are present
 
+
 %%% Parse obtained information and create standardized hdr structure
 
 % obtain list of possible channels and their data-file file extensions, combine into filenames 
 label     = fieldnames(hdr2.contacts);
-fileext   = cell(size(label));
+chanfn    = cell(size(label));
+datadir   = [ephysbase 'noreref/'];
 for ichan = 1:numel(label)
   currind = hdr2.contacts.(label{ichan}).channel;
-  fileext{ichan} = num2str(currind,'%03.0f');
+  currfn  = [datadir patname '_' experiment '_' sessionnum '_' hdr1.start_time_str '.' num2str(currind,'%03.0f')];
+  if exist(currfn,'file')
+    chanfn{ichan} = currfn;
+  end
+end
+notexist = cellfun(@isempty,chanfn);
+if sum(notexist)~=0
+  warning([num2str(sum(notexist)) ' out of ' num2str(numel(label)) ' channels in contacts.json not found on disk, removed from header'])
+  label(notexist)  = [];
+  chanfn(notexist) = [];
 end
 
 % get number of bytes per element of dataformat (lame..., there should be matlab function for this)
@@ -88,13 +107,43 @@ hdr.nChans       = numel(label);
 hdr.nSamples     = hdr1.n_samples;
 hdr.Fs           = hdr1.sample_rate;
 hdr.label        = label;
-hdr.labelfileext = fileext;
+hdr.channelfile  = chanfn;
 hdr.nSamplesPre  = 0;
 hdr.nTrials      = 1;
 hdr.dataformat   = hdr1.data_format;
 hdr.nBytes       = nbytes;
+hdr.chantype     = repmat({'unknown'},[numel(label) 1]);
+hdr.chanunit     = repmat({'unknown'},[numel(label) 1]);
 hdr.orig1        = hdr1;
 hdr.orig2        = hdr2;
 
     
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SUBFUNCTION
+function jsonstring = fixjsonnan(jsonstring)
+
+% check whether already read
+if exist(jsonstring,'file')
+  jsonstring = fileread(jsonstring);
+end
+
+% find NaN, Inf, -Inf
+target = {'NaN','Inf','-Inf'};
+for itarg = 1:numel(target)
+  ind = findstr(jsonstring,target{itarg}); % case sensitive
+  for iind = 1:numel(ind)
+    begind = ind(iind);
+    endind = ind(iind)+numel(target{itarg})-1;
+    tmpstring1 = jsonstring(1:begind-1);
+    tmpstring2 = jsonstring(endind+1:end);
+    jsonstring = [tmpstring1 '"_' jsonstring(begind:endind) '_"' tmpstring2];
+  end
+end
+
+
+
+
+
     
