@@ -73,13 +73,21 @@ end
 hdr1      = hdr1.(fieldname{:}); 
 
 % find and parse all_events.json, containing the eeg file name (unambigously, hopefully)
-takeventsfn = [headerfile(1:slashind(end)) hookhdr.files.task_events];
-taskevents  = loadjson(takeventsfn);
-filebase    = taskevents{1}.eegfile; 
-if isempty(filebase) % sigh
-  warning('Ephys files cannot be identified unambigously, error following')
-  error('Ephys files cannot be identified unambigously')
-  % possible unsafe fallback: filebase = [patname '_' experiment '_' sessionnum '_' hdr1.start_time_str];
+takeventsfn  = [headerfile(1:slashind(end)) hookhdr.files.task_events];
+taskevents   = loadjson(takeventsfn);
+taskevents   = [taskevents{:}];
+taskeventsef = unique({taskevents.eegfile});
+taskeventsef = taskeventsef(~cellfun(@isempty,taskeventsef)); % remove empty eegfile fields
+if numel(taskeventsef)==1
+  filebase    = taskeventsef{1};
+  if isempty(filebase) % sigh
+    warning('Ephys files cannot be identified unambigously, error following')
+    error('Ephys files cannot be identified unambigously')
+    % possible unsafe fallback: filebase = [patname '_' experiment '_' sessionnum '_' hdr1.start_time_str];
+  end
+else
+  warning('multiple datasets detects in 1 session? Error following')
+  error('multiple datasets detects in 1 session?')
 end
 
 % obtain contacts.json info
