@@ -142,8 +142,12 @@ if all(nbytes==nbytes(1))
     if isequal(nsample,foundnsample)
       % nice
     else
-      warning(['nsample found (' num2str(foundnsample) ') deviations from nsample specified (' num2str(nsample) '), sources.json possible does not match ephys file size, recording cannot be identified or matched unambiguously to task_events, error following'])
-      error('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events')
+      if (nsample-foundnsample) == 1
+        warning('sources.json nsample deviates from ephys files by 1 sample, this is presambly caused by sources.json, ephys files can be used safely')
+      else
+        warning(['nsample found (' num2str(foundnsample) ') deviations from nsample specified (' num2str(nsample) '), sources.json possible does not match ephys file size, recording cannot be identified or matched unambiguously to task_events, error following'])
+        error('sources.json likely does not match ephys file size, recording cannot be identified or matched unambiguously to task_events')
+      end
     end
   end
 else
