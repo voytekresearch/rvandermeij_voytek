@@ -43,7 +43,7 @@
 %
 % Reading in the raw recordings and segmenting it into trials is performed using FieldTrip.
 % FieldTrip can be found on http://www.fieldtriptoolbox.org/
-% For additional information on preprocessing options and, see the tutorials in the Preprocessing
+% For additional information on preprocessing and analysis options, see the tutorials in the Preprocessing
 % section of the FieldTrip tutorial list, which can be found at: http://www.fieldtriptoolbox.org/tutorial 
 %
 % The MATLAB-structure 'data' produced below is a FieldTrip style data-structure. 
@@ -75,8 +75,8 @@ subject    = 'R1001P'; % change this to read in different datasets;  which subje
 experiment = 'FR1';    % change this to read in different datasets;  only FR1/2 can be segmented by rmr_upennram_trialfun
 session    = '0';      % change this to read in different datasets;  session numbers are zero-indexed
 headerfile = [datapath subject '/experiments/' experiment '/sessions/' session '/' 'behavioral/current_processed/index.json'];       % see READ_UPENNRAM_HEADER for details
-datadir    = [datapath subject '/experiments/' experiment '/sessions/' session '/' 'ephys/current_processed/noreref/'];              % see READ_UPENNRAM_DATA for details
-eventfile  = [datapath subject '/experiments/' experiment '/sessions/' session '/' 'behavioral/current_processed/task_events.json']; % see READ_UPENNRAM_EVENT for details
+datadir    = [datapath subject '/experiments/' experiment '/sessions/' session '/' 'ephys/current_processed/noreref/'];              % see READ_UPENNRAM_DATA   for details
+eventfile  = [datapath subject '/experiments/' experiment '/sessions/' session '/' 'behavioral/current_processed/task_events.json']; % see READ_UPENNRAM_EVENT  for details
 
 % obtaining segmentation details
 cfg = []; % start with an empty cfg
@@ -90,6 +90,7 @@ cfg.recprestim  = 0;   % during   recall, the period, in seconds, before word on
 cfg.recpoststim = 0;   % during   recall, the period, in seconds, after cfg.recduration, that is additionally cut out 
 trl = rmr_upennram_trialfun(cfg); % obtain the trl matrix, which contains the segmentation details (Note, this function can also be called from with ft_definetrial)
 
+
 % read in data and segment it (this is the stage where filtering the data is usually done, as it allows for data padding in a convenient way)
 cfg = []; % start with an empty cfg
 cfg.datafile     = datadir;
@@ -99,10 +100,33 @@ cfg.headerformat = 'read_upennram_header';
 cfg.trl          = trl;
 data = ft_preprocessing(cfg); % obtain segmented data
 
+% viewing the segmented data in ft_databrowser
+cfg = []; % start with an empty cfg
+cfg.viewmode = 'vertical'; % displays channels vertically, another option is a 'butterfly' plot
+cfg.ylim     = [-40 40];   % a choice of voltage limits to ensure each subject is seen from the same perspective (can be modified in the GUI)
+ft_databrowser(cfg,data);  % opens a GUI for browsing through the data
 
 
+% Below is an alternative to the above, which is most useful for the initial cleaning of the data. Since the trial definition can change 
+% in the course of an analysis project (e.g. baselines), it is useful to make sure no artifacts remain outside of the trial boundaries. 
+% For this reason, we read in the data *without* segmenting it, and store artifact information that preserves their exact location: samples
+% of the raw data files on disk. Note that this often includes the prepratory stages with the patient moving, talking, etc. This can cause 
+% the initial part of the recording to look very different from the when the experiment is running. 
 
+% read in data without segmenting it, by not using a trl matrix. I.e., read all the possible data in at once.
+cfg = []; % start with an empty cfg
+cfg.datafile     = datadir;
+cfg.dataformat   = 'read_upennram_data';
+cfg.headerfile   = headerfile;
+cfg.headerformat = 'read_upennram_header';
+data = ft_preprocessing(cfg); % obtain data
 
+% viewing the non-segmented, i.e. continuous, data in ft_databrowser
+cfg = []; % start with an empty cfg
+cfg.viewmode  = 'vertical'; % displays channels vertically, another option is a 'butterfly' plot
+cfg.ylim      = [-40 40];   % a choice of voltage limits to ensure each subject is seen from the same perspective (can be modified in the GUI)
+cfg.blocksize = 4;          % set the segment size to view at once to 4s
+ft_databrowser(cfg,data);   % opens a GUI for browsing through the data
 
 
 
