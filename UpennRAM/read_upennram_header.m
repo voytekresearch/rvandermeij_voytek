@@ -1,7 +1,9 @@
 function [hdr] = read_upennram_header(headerfile)
 
 % READ_UPENNRAM_HEADER reads the header from UPenn's RAM (Restoring Active Memory) publically
-% available datasets.
+% available datasets. It uses several of the possible header files as a hook, to obtain details
+% necessary for making sure the data files match the intended recording, and checking for
+% data integrity. 
 % 
 % UPenn's RAM project is a DARPA funded project, headed by Daniel Rizzuto and Michael Kahana.
 % From the RAM website: (http://memory.psych.upenn.edu/RAM)
@@ -34,7 +36,7 @@ function [hdr] = read_upennram_header(headerfile)
 %                            (It is key that #2 reflects the montage used on the day of recording, incase the patients had a reimplantation, 
 %                             which is ensured by using index.json.)
 %                            Note: the Ephys filename base is currently taken from $PATIENTID/experiments/$TASKID/sessions/$#/behavioral/current_processed/task_events.json,
-%                                  due to the name field in index.json contains faulty information for some datasets
+%                                  due to the name field in index.json containing faulty information for some datasets
 %      And,
 %                hdr = matlab structure, containing details of the respective dataset, such as channel names, binary format, number of samples, etc
 %
