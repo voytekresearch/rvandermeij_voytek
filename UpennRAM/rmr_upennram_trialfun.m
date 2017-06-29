@@ -63,7 +63,7 @@ end
 event   = cfg.event;
 fsample = cfg.header.Fs;
 trl = [];
-for ievent = 1:numel(event); % looping over events
+for ievent = 1:numel(event) % looping over events
   
   
   % Finding CUE as trial anchor
@@ -96,7 +96,7 @@ for ievent = 1:numel(event); % looping over events
     subseqmem = event(ievent).recalled;
     list      = event(ievent).list;
     serialpos = event(ievent).serialpos;
-    wordno    = event(ievent).wordno;
+    wordno    = event(ievent).item_num;
     
     %         
     timefromprev = (event(ievent-1).eegoffset-begsample) ./ fsample; % (positive indicates overlap)
