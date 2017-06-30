@@ -240,14 +240,14 @@ lnspectra.filtpsd    = filtpow;
 % 1) original PSD in log/norm space with found peaks highlighted and filtered spectrum on top of it
 figure('numbertitle','off','name','original and filtered mean PSD in log/normal space')
 hold on
-l1 = plot(freq,mean(log10(lnspectra.origpsd),1),'color',rgb('green'));
+l1 = plot(freq,mean(log10(lnspectra.origpsd),1),'color',[0 1 0]);
 for ipeak = 1:numel(peaks)
   begfreq = peaks(ipeak)-bandwidth(ipeak);
   endfreq = peaks(ipeak)+bandwidth(ipeak);
   ind = find(freq>=begfreq & freq<=endfreq);
-  l2 = plot(freq(ind),mean(log10(lnspectra.origpsd(:,ind)),1),'color',rgb('red'));
+  l2 = plot(freq(ind),mean(log10(lnspectra.origpsd(:,ind)),1),'color',[1 0 0]);
 end
-l3 = plot(freq,mean(log10(lnspectra.filtpsd),1),'color',rgb('blue'));
+l3 = plot(freq,mean(log10(lnspectra.filtpsd),1),'color',[0 0 1]);
 xlabel('frequency (Hz)')
 ylabel('log mean (over channels) power')
 if numel(peaks)>1
@@ -260,10 +260,10 @@ title('result of bandstop filtering line spectra')
 % 2) original PSD and filtered PSD in log/norm space, for input Welch window and for a 50ms window
 figure('numbertitle','off','name','original/filtered mean PSD in log/normal space with input Welch, and Welch = 50ms')
 hold on
-plot(freqorig,mean(log10(origpow),1),'color',rgb('light blue'))
-plot(freg50ms,mean(log10(origpow50ms),1),'color',rgb('blue'))
-plot(freqorig,mean(log10(filtpow),1),'color',rgb('light green'))
-plot(freg50ms,mean(log10(filtpow50ms),1),'color',rgb('green'))
+plot(freqorig,mean(log10(origpow),1),'color',[0.5 0.8 1])
+plot(freg50ms,mean(log10(origpow50ms),1),'color',[0 0 1])
+plot(freqorig,mean(log10(filtpow),1),'color',[.6 1 .5])
+plot(freg50ms,mean(log10(filtpow50ms),1),'color',[0 1 0])
 legend(['original PSD ' num2str(param.welchwin) 's Welch'],'original PSD 50ms Welch',['filtered PSD ' num2str(param.welchwin) 's Welch'],'filtered PSD 50ms Welch')
 title('bleeding of line spectra into neighboring frequencies')
 
@@ -276,14 +276,14 @@ for ipass = 1:npass
   currpeaks = pspecpeaks{ipass};
   currbandw = pspecbandw{ipass};
   currprpow = pspecprpow{ipass};
-  l1 = plot(freq,currprpow,'color',rgb('blue'));
+  l1 = plot(freq,currprpow,'color',[0 0 1]);
   for ipeak = 1:numel(currpeaks)
     begfreq = currpeaks(ipeak)-currbandw(ipeak);
     endfreq = currpeaks(ipeak)+currbandw(ipeak);
     ind = find(freq>=begfreq & freq<=endfreq);
-    l2 = plot(freq(ind),currprpow(ind),'color',rgb('red'));
+    l2 = plot(freq(ind),currprpow(ind),'color',[1 0 0]);
   end
-  l3 = line([freq(1) freq(end)],[param.zthresh param.zthresh],'linestyle','--','color',rgb('dark green'));
+  l3 = line([freq(1) freq(end)],[param.zthresh param.zthresh],'linestyle','--','color',[.6 .8 .5]);
   xlabel('frequency (Hz)')
   ylabel('log mean (over channels) power')
   if numel(currpeaks)>1
@@ -485,10 +485,10 @@ function playground
 
 figure
 hold on
-plot(freqorg,mean(log10(poworg)),'color',rgb('light blue'))
-plot(freq075,mean(log10(poworg075)),'color',rgb('blue'))
-plot(freqorg,mean(log10(filtpow)),'color',rgb('light green'))
-plot(freq075,mean(log10(filtpow075)),'color',rgb('green'))
+plot(freqorg,mean(log10(poworg)),'color',[0.5 0.8 1])
+plot(freq075,mean(log10(poworg075)),'color',[0 0 1])
+plot(freqorg,mean(log10(filtpow)),'color',[.6 1 .5])
+plot(freq075,mean(log10(filtpow075)),'color',[0 1 0])
 legend('original PSD 10s Welch','original PSD 0.075s Welch','filtered PSD 10s Welch','filtered PSD 0.075s Welch')
 
 
