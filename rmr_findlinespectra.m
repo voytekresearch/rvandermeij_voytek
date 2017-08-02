@@ -137,22 +137,20 @@ while peaksremaining
   % iteratively increase bandwidth till all peaks are gone
   peakgone = false(size(peaks));
   itinner = 0;
-  newfiltdat = filtdat;
   while ~all(peakgone)
-    newfiltdat = filtdat;
     itinner = itinner + 1;
     
     % filter data, but do it per channel to save memory
     for ipeak = 1:numel(peaks)
       % apply a bandstop filter
       disp(['applying filter for peak at ' num2str(peaks(ipeak)) 'Hz +/- ' num2str(bandwidth(ipeak)) 'Hz'])
-      for ichan = 1:size(newfiltdat,1)
-        newfiltdat(ichan,:) = ft_preproc_bandstopfilter(newfiltdat(ichan,:), fsample, [peaks(ipeak)-bandwidth(ipeak) peaks(ipeak)+bandwidth(ipeak)], param.filtord, param.filttype, param.filtdir);
+      for ichan = 1:size(filtdat,1)
+        filtdat(ichan,:) = ft_preproc_bandstopfilter(filtdat(ichan,:), fsample, [peaks(ipeak)-bandwidth(ipeak) peaks(ipeak)+bandwidth(ipeak)], param.filtord, param.filttype, param.filtdir);
       end
     end
     
     % get pow and process it, using same zval-ling as used initially
-    [pow, freq] = getpow(newfiltdat,fsample,searchrange,param.welchwin,param.taper);
+    [pow, freq] = getpow(filtdat,fsample,searchrange,param.welchwin,param.taper);
     procpow = processpow(pow,freq,zparam);
     
     % assess residual peak presence per peak, report in peaksgone, and increase bandwidth if necessary
@@ -179,7 +177,6 @@ while peaksremaining
   % save pass-specific peaks and bandwidth, and new filtdat
   pspecpeaks{itouter} = peaks;
   pspecbandw{itouter} = bandwidth;
-  filtdat = newfiltdat;
   
   % stop if it goes on too long
   if itouter == param.maxouterit
