@@ -38,7 +38,7 @@ function lnspectra = rmr_findlinespectra(dat,fsample,searchrange,param)
 % 
 % 
 %                Input:
-%                         dat = Nchan X Nsample spatio-temporal matrix 
+%                         dat = Nchan X Nsample spatio-temporal matrix (can also be a filename with a single matrix, to save memory)
 %                     fsample = scalar, sampling rate in Hz
 %                 searchrange = 1x2 vector, frequency range in Hz to search in [freqmin freqmax]
 %                       param = structure, containing additional inputs
@@ -87,14 +87,26 @@ if ~isfield(param,   'filtdir'),     param.filtdir     = 'twopass';    end
 if ~isfield(param,   'maxouterit'),  param.maxouterit  = 5;            end
 if ~isfield(param,   'maxinnerit'),  param.maxinnerit  = 5;            end
 
+% load if filename
+if ischar(dat)
+  filevars = whos('-file', dat);
+  if numel(filevars)>1 || ~any(strcmp(filevars.class,{'single','double'})) 
+    error('filename contains either a single variable or not a array of singles or doubles')
+  end
+  datvarname = filevars.name;
+  filecontent = load(dat);
+  dat = filecontent.(datvarname);
+  clear filecontent
+end
+
 % sanity checks
 if size(dat,2)<size(dat,1)
   error('dat has more channels than samples')
 end
 
 % get pow of original data to be used in output
-[origpow, freqorig]     = getpow(dat,fsample,searchrange,param.welchwin,param.taper);
-[origpow50ms, freg50ms] = getpow(dat,fsample,searchrange,0.050,param.taper);
+[origpow, freqorig]     = getpow(dat,fsample,searchrange,param.welchwin,param.taper,false);
+[origpow50ms, freg50ms] = getpow(dat,fsample,searchrange,0.050,param.taper,false);
 
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -112,7 +124,7 @@ while peaksremaining
   itouter = itouter + 1;
   
   % get pow
-  [pow, freq] = getpow(diff(filtdat,[],2),fsample,searchrange,param.welchwin,param.taper);
+  [pow, freq] = getpow(filtdat,fsample,searchrange,param.welchwin,param.taper,true);
   % process pow
   [procpow,zparam] = processpow(pow,freq,[],peaks,bandwidth);
   
@@ -150,8 +162,8 @@ while peaksremaining
     end
     
     % get pow and process it, using same zval-ling as used initially
-    [pow, freq] = getpow(filtdat,fsample,searchrange,param.welchwin,param.taper);
-    procpow = processpow(pow,freq,zparam);
+    [pow, freq] = getpow(filtdat,fsample,searchrange,param.welchwin,param.taper,false);
+    procpow     = processpow(pow,freq,zparam);
     
     % assess residual peak presence per peak, report in peaksgone, and increase bandwidth if necessary
     for ipeak = 1:numel(peaks)
@@ -213,8 +225,8 @@ else
 end
 
 % produce filtpow for output structure
-[filtpow, freqorig]     = getpow(filtdat,fsample,searchrange,param.welchwin,param.taper);
-[filtpow50ms, freg50ms] = getpow(filtdat,fsample,searchrange,0.050,param.taper);
+[filtpow, freqorig]     = getpow(filtdat,fsample,searchrange,param.welchwin,param.taper,false);
+[filtpow50ms, freg50ms] = getpow(filtdat,fsample,searchrange,0.050,param.taper,false);
 
 
 % create output structure
@@ -305,7 +317,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculate power
-function [pow, freq] = getpow(dat,fsample,searchrange,welchwin,taper)
+function [pow, freq] = getpow(dat,fsample,searchrange,welchwin,taper,diffflag)
 
 % set basics
 nsample = size(dat,2);
@@ -334,10 +346,16 @@ for iwelch = 1:nwelchwin
   tap = tap(:); % ensure tap is column vector, some window functions return a row instead of column
   currind = welchind(iwelch,:);
   currdat = dat(:,currind(1):currind(2));
-  currdat = bsxfun(@times,currdat,tap.');
+  if diffflag
+    currdat    = diff(currdat,[],2);
+    currdattap = bsxfun(@times,currdat,tap(1:end-1).');
+  else
+    currdattap = bsxfun(@times,currdat,tap.');
+  end
+  
   
   % get power
-  fftdat = fft(currdat,[], 2);
+  fftdat = fft(currdattap,[], 2);
   currpow = abs(fftdat(:,freqboi)).^2; % select bins
   
   % calc running mean
