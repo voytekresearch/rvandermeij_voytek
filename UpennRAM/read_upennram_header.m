@@ -102,6 +102,8 @@ hdr2       = hdr2.(fieldname{:}); % failsafe in case of event that two main fiel
 
 % obtain list of possible channels and their data-file file extensions, combine into filenames 
 label     = fieldnames(hdr2.contacts);
+% sort label naturally
+label     = sortnat(label);
 chanfn    = cell(size(label));
 datadir   = [ephyspath 'noreref/'];
 for ichan = 1:numel(label)
@@ -198,6 +200,50 @@ for itarg = 1:numel(target)
     jsonstring = [tmpstring1 '"_' jsonstring(begind:endind) '_"' tmpstring2];
   end
 end
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SUBFUNCTION
+function strarray = sortnat(strarray)
+
+nel = numel(strarray);
+
+% first sort regularly
+strarray = sort(strarray);
+
+% extract string base
+strbase = cell(nel,1);
+for iel = 1:nel
+  strbase{iel} = strarray{iel}(isletter(strarray{iel})); 
+end
+unistrbase = unique(strbase);
+
+
+% extract num base
+numext = NaN(nel,1);
+for iel = 1:nel
+  numext(iel) = str2double(strarray{iel}(~isletter(strarray{iel}))); 
+end
+
+% sort per strbase
+for iuni = 1:numel(unistrbase)
+  arrayind   = find(strcmp(strbase,unistrbase{iuni}));
+  currnumext = sort(numext(arrayind));
+  for isubel = 1:numel(arrayind)
+    currind = arrayind(isubel);
+    strarray{currind} = [strbase{currind} num2str(currnumext(isubel))];
+  end
+end
+
+
+
+
+
+
 
 
 
