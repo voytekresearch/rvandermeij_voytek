@@ -210,6 +210,8 @@ end
 %%% SUBFUNCTION
 function strarray = sortnat(strarray)
 
+% sort 'naturally' using only the set of numbers at the end of each string
+
 nel = numel(strarray);
 
 % first sort regularly
@@ -218,7 +220,9 @@ strarray = sort(strarray);
 % extract string base
 strbase = cell(nel,1);
 for iel = 1:nel
-  strbase{iel} = strarray{iel}(isletter(strarray{iel})); 
+  lettbool = isletter(strarray{iel});
+  lettind  = 1:find(lettbool,1,'last');
+  strbase{iel} = strarray{iel}(lettind); 
 end
 unistrbase = unique(strbase);
 
@@ -226,7 +230,9 @@ unistrbase = unique(strbase);
 % extract num base
 numext = NaN(nel,1);
 for iel = 1:nel
-  numext(iel) = str2double(strarray{iel}(~isletter(strarray{iel}))); 
+  lettbool = isletter(strarray{iel});
+  numind  = find(lettbool,1,'last')+1:numel(lettbool);
+  numext(iel) = str2double(strarray{iel}(numind)); 
 end
 
 % sort per strbase
