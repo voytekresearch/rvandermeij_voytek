@@ -153,7 +153,7 @@ while peaksremaining
     itinner = itinner + 1;
     
     % filter data, but do it per channel to save memory
-    for ipeak = 1:numel(peaks)
+    for ipeak = find(~peakgone)
       % apply a bandstop filter
       disp(['applying filter for peak at ' num2str(peaks(ipeak)) 'Hz +/- ' num2str(bandwidth(ipeak)) 'Hz'])
       for ichan = 1:size(filtdat,1)
