@@ -113,7 +113,7 @@ for itrial = 1:ntrial
     end
     
     % get spec-est
-    [spectrum,ntaperout,freqdum,timeoiout] = ft_specest_mtmconvol(currtrialdat, currtrialtime,'freqoi',freqoi(ifreq),'timeoi',timeoi,'timwin',timwin(ifreq),'pad',padding,tapopt{:},'verbose',0);
+    [spectrum,ntaperout,freqdum,timeoiout] = ft_specest_mtmconvol(currtrialdat, currtrialtime,'freqoi',freqoi(ifreq),'timeoi',timeoi,'timwin',timwin(ifreq),'pad',padding,tapopt{:},'verbose',0,'polyorder',1);
     
     % reorganize to into a chan-by-tap*time matrix
     spectrum = permute(spectrum,[2 1 3 4]);
