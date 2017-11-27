@@ -1,0 +1,83 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf100
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+{\info
+{\author Roemer van der Meij}}\margl1440\margr1440\vieww23420\viewh18620\viewkind1\viewscale120
+\deftab720
+\pard\pardeftab720\ri0\partightenfactor0
+
+\f0\fs22 \cf0 For a brief outline for the purpose of the experiment, see BP_Temporal_prediction_proposal.pdf, written as a short intro for Jack by Brad P.\
+\
+For a brief of analyses related to the primary hypotheses of prediction-induced pre-face phase alignment, see Mail_about_prediction-induced_pre-face_phase_alignment.pdf. The analyses are not strong, but do highlight that there is very little evidence for the prediction, and without additional evidence in support of I estimate digging deeper is not likely to be fruitful.\
+\
+For a brief overview of some additional preliminary analyses into broader effects of amygdala-orbitofrontal/others coupling of various sorts, and HFA effect clues, look at pred_face_val.pptx. A deeper dig here might very well prove fruitful, especially regarding orbitofrontal coupling. Talk also with Jie, who showed some very interesting results with her dynamic poster at SfN 2017. This involved orbitofrontal coupling to (amygdala IIRC), with a temporal pattern in the task that nicely followed predictions, over subjects. \
+\
+\
+For my code regarding the project, I typically follow the following structure.\
+
+\i READ INFO FILE\
+LOOP OVER SUBJECTS TO READ IN (AND CLEAN) DATA, CONDUCT ANALYSES, AND SAVE OUT RESULTS\
+(SOME PLAYGROUND FUNCTION FOR RUDIMENTARY ON THE FLY PLOTTING)\
+
+\i0 \
+
+\i (The code's documentation is, 'not perfect\'92, most of it was meant for my eyes only. However, the first part of all the analyses file should work. The playground part with on-the-fly ugly plotting, is less likely a bit of a mess. Use this to get some primers on how you can plot various aspect of the results, and take it from there. There's a lot of copy pasting going on between files in the playground parts, hence the on-the-fly comment. It also depends often on files from the Matlab file exchange for plotting, which sometimes I hacked together for quick workarounds, plenty of gems to find on the exchange!)
+\i0 \
+\
+The main 'info' file (r
+\i mr_predfaceval_info.m)
+\i0  contains all specifics of the datasets, such as channels to be thrown out, filtering frequencies, artifact segments in sample numbers, etc. This file also contains the paths to the data files and the path for saving result files. This file is key!\
+\
+Basically, all analyses that I included can be run out-of-the-box by changing only the paths in the info file.\
+\
+\
+Whenever I read in data, I do so from the RAW DATA FILES, as given by the amplifier, to avoid issues due to pipeline changes in old intermediate (clean) data copies. The data is read in, filtered, and trials defined (segmented) based on parameters defined locally. This is streamlined with rmr_predfaceval_fetchpreprocessdata.m. (I updated some functions to use this, some older analyses I left as is.) The file rmr_predfaceval_definetrials.m does the segmentation, and in this case, also does a lot of dealing with diode signal issues. (This file has can also be found in another spot in the repository, it should be identical). Once the data is read in and cleaned, I typically compute either final analyses or something intermediate, which CAN be saved to disk without worries (as it will only be used for a single easily identified purpose). Typically, I save intermediate files when it takes more than half an hour to obtain them per subject.\
+\
+Regarding diode issues, for earlier subjects the automatic detection of events worked fine, but at some point work-arounds for new subjects were getting ridiculous. To circumvent this, there is a variable in the info file for some subjects that sets a subject-specific threshold for diode events. \
+\
+This directory in the repo also contains a rmr_predfaceval_readdata.m, also duplicate elsewhere in the repo, which gives a very barebones script for going from data on disk, to data in memory. This file is does not use the info file for metadata. \
+\
+Below, a very brief description of what some of the analysis scripts do (or intend to do):\
+rmr_predfaceval_gettfrphase.m - 
+\i this file produced most of the figures in the email-pdf above, i.e. does phase alignment analyses (might require the circstat toolbox from the Matlab file exchanges)
+\i0 \
+rmr_predfaceval_getevokedpotentials.m -
+\i  guess what?
+\i0 \
+rmr_predfaceval_gethfa.m - 
+\i another simple one, obtain HFA per channel in various conditions.
+\i0 \
+rmr_predfaceval_getpac.m - 
+\i obtain osc-osc or osc-hfa PAC over several segmentations (note, the browsing function in the playground has been updated a while ago, its input right here likely won't work anymore; the browsing function is located higher up in the repo)
+\i0 \
+rmr_predfaceval_getpacdecomp.m - 
+\i using the output from the previous, decompose PAC using PARAFAC (see my 2012 paper). This file contains a key part where I take some low-level PARAFAC code to obtain trial weights for the PAC components after they were obtained. 
+\i0 \
+rmr_predfaceval_getpsdandtfr.m - 
+\i some basic exploration of power spectra and time-frequency-representations (tfr) of power. \
+
+\i0 rmr_predfaceval_getslopeandpsd.m - 
+\i obtain an tfr, and fit the slope in the playground (not a great slope fitting, old, should be improved)
+\i0 \
+rmr_predfaceval_getfourier.m - 
+\i obtain input to use for SPACE (nd_nwaydecomposition)
+\i0 \
+rmr_predfaceval_getspace.m - 
+\i this file obtains SPACE decompositions. What is done is quickly tweaked by the variable nwaynmethod at the top: \'91ncompXX\'92 extracts XX components; \'91ncompXXsh\'92 does a split reliability comparison for only XX, to sample when components are no longer reliable; \'91splitrel\'92 goes through a full split reliability procedure, whose start/stepsize/end are set around line #155.
+\i0 \
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+}
