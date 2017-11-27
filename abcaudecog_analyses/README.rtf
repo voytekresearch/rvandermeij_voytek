@@ -1,0 +1,93 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf100
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+{\info
+{\author Roemer van der Meij}}\margl1440\margr1440\vieww24620\viewh19820\viewkind1\viewscale120
+\deftab720
+\pard\pardeftab720\ri0\partightenfactor0
+
+\f0\fs22 \cf0 This directory contains files to conduct analyses on the ECoG data recorded by Aurelie Bidet-Caulet, during an auditory attention paradigm. A pdf is added from a paper by Aurelie, which describes the auditory attention task in detail. \
+\
+Briefly, it is as follows:\
+Patients were listening to sounds presented to either both ears, the left ear, or the right ear. They were tasked to detect either, deviant stimuli in the right ear, deviant stimuli in the left ear, or to attend both ear simultaneously without response. Both monoaural and binaural stimuli could be a of low pitch type and a high pitch type. \
+\
+Regarding analysis results, the best description is \'91noisy\'92. Whatever preliminary effects I found (attend vs not attend, binaural vs monaural, low vs high pitch) were noisy. Typically, any of the baselines had large variance. Not surprising, since there were few trials in most conditions. If one chooses to pursue this data further, I would recommend collapsing across many of the conditions. From quick investigations, there was little evidence of differences ipsilateral vs contralateral stimuli (right auditory electrodes, right ear stimuli, left ear stimuli). It might be worth it to investigate the data from the perspective of auditory cortices being bilaterally innervated w.r.t. to the regions we pick up signals from. Whatever one chooses to do, it is very important to keep an eye out for differences in trial numbers, might varied tremendously over sub conditions and over subjects. Even after collapsing across some of the sub conditions it can still be that an effect is driven by one of the due to e.g. a 20 vs 80 ntrial differences.\
+
+\i (For various combinations of sub conditions, see rmr_abcaudecog_getpacdecomp.m described below)
+\i0 \
+\
+Most of the files in the directory are old. I included only a subset of the analyses I conducted, as it will take some archaeology to go through some of the quicker on-the-fly analyses I did. Additionally, some of the files refer to functions I have long since overhauled and restructured. I include the analyses mostly to show how the data can be interacted with using the support files. \
+\
+I typically follow the following structure when doing analyses:\
+1) read-in info file containing metadata (and paths)\
+2) loop over subjects to read in data from disk, clean it, conduct analyses, and save out results\
+\
+The info file (rmr_abcaudecog_info.m) contains all key metadata to run the rest of the files, inc filter specifics, sample segments to remove, bad channels, etc. Most of the files should be runable (interact with the data), by changing the paths in the info file.\
+\
+Whenever I read in data, I do so from the RAW DATA FILES, as given by the amplifier, to avoid issues due to pipeline changes in old intermediate (clean) data copies. The data is read in, filtered, and trials defined (segmented) based on parameters defined locally. This is streamlined with rmr_abcaudecog_fetchpreprocessdata.m.
+\i  (I updated only the first two of the below files to use this, the other analyses are left as is.)
+\i0  The file rmr_abcaudecog_definetrialsfrompos.m does the segmentation, and in this case. Once the data is read in and cleaned, I typically compute either final analyses or something intermediate, which CAN be saved to disk without worries (as it will only be used for a single easily identified purpose). Typically, I save intermediate files when it takes more than half an hour to obtain them per subject.\
+\
+rmr_abcaudecog_getpac.m - 
+\i this files contains the most up to date reading-in of the data, and should be used as a starting point for interfacing with the data. Analysis-wise, it computes osc-osc, osc-hfa, and osc-hfo, PAC, across various sub conditions. (the HFA is bit outdated, should use my rmr_highfrequencyactivity function). This functions also combines over various conditions.
+\i0 \
+rmr_abcaudecog_getpacdecomp.m - 
+\i using the output from the previous, decompose PAC using PARAFAC (see my 2012 paper). This file contains a key part where I take some low-level PARAFAC code to obtain trial weights for the PAC components after they were obtained. 
+\i0 \
+rmr_abcaudecog_behav.m - 
+\i spits out task details and performance per subject
+\i0 \
+rmr_abcaudecog_getamuaERPAC.m - 
+\i compute event-related PAC and browse through it. Note: this used my old function for computing PAC, and should be updated to use rmr_phaseamplitudecoupling.com/
+\i0 \
+rmr_abcaudecog_gethfa.m -
+\i  compute HFA, this is what I used for my SfN 2015 poster. This is also where I saw the most convincing preliminary results
+\i0 \
+rmr_abcaudecog_getpsdchifreqwphase_sh_eqntrl.m - 
+\i compute PAC between oscillations and slope, split over conditions, trial number normalized, for decomposing with PARAFAC
+\i0 \
+rmr_abcaudecog_getpsdchifreqwphase_sh_eqntrl_decomp.m - 
+\i decompose the above with PARAFAC
+\i0 \
+rmr_abcaudecog_getpsdchitimeresolved.m - 
+\i compute time-resolved slope, with varying window sizes (hint, small windows are terrible; get slope in a better way than is done here)
+\i0 \
+rmr_abcaudecog_plotmnionbrain.m - 
+\i guess what this does
+\i0 \
+\
+rmr_abcaudecog_info.m - 
+\i metadata file
+\i0 \
+rmr_abcaudecog_data2fieldtrip.m - 
+\i support file
+\i0 \
+rmr_abcaudecog_definetrialsfrompos.m - 
+\i support file
+\i0 \
+rmr_abcaudecog_fetchpreprocessdata.m - 
+\i support file
+\i0 \
+rmr_abcaudecog_replacechanlabels.m - 
+\i support file\
+
+\i0 rmr_abcaudecog_getchaninfo.m - 
+\i support file\
+\
+
+\i0 There is also a file for each subject containing a custom 2D representation of the electrode layout (fieldtrip style), to be used in plotting. See the playground of rmr_abcaudecog_getpacdecomp.m and rmr_abcaudecog_gethfa.m for examples. \
+\
+
+\i (See my other analyses directories such as predfaceval and upennram to find up to date code for computing SPACE decompositions)\
+\
+
+\i0 roe_brainplot_chancircle.m - 
+\i I\'92ve included this file to use as inspiration for visualizing electrodes on the brain, it\'92s very old and not well documented. I also have not included the TAL/MNI templates that visualize the brain itself, adapt the code to use a template that you have, or use cfg.renderbrain = \'91no\'92.
+\i0 \
+roe_brainplot_chanpatch.m
+\i  - I\'92ve included this file to use as inspiration for visualizing electrodes on the brain as a colored patch, it\'92s very old and not well documented. I also have not included the TAL/MNI templates that visualize the brain itself, adapt the code to use a template that you have, or use cfg.renderbrain = \'91no\'92.
+\i0 \
+\
+
+\i (The code's documentation is, 'not perfect\'92, most of it was meant for my eyes only. However, the first part of all the analyses files should work. After that, there is typically a playground part in a subfunction for most of the files, these are where I often do quick on-the-fly ugly plotting and browsing. This is more likely to be a bit of a mess. Use this to get some primers on how you can plot various aspect of the results, and take it from there. There's a lot of copy pasting going on between files in the playground parts, hence the on-the-fly comment. It also depends often on files from the Matlab file exchange for plotting, which sometimes I hacked together for quick workarounds, plenty of gems to find on the exchange!)}
